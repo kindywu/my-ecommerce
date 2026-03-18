@@ -74,6 +74,9 @@ bun run preview
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
 
-supabase database password: `8YyRQuOr7hidUejr`
+supabase database password: `FBaF2VFWscjXW5g5`
 
-npx supabase gen types typescript --project-id lgnrddefrwnfubkamseb > types/database.types.ts
+npx supabase gen types typescript --project-id jrwlagkwlbupffuekawa > app/types/database.types.ts
+
+npx supabase db execute --file supabase/migrations/schema.sql --linked
+npx supabase db execute --file supabase/migrations/seed.sql --linked
