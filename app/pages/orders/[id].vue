@@ -167,58 +167,18 @@ const cancelling = ref(false);
 const downloadingPdf = ref(false);
 
 // Server-side
-async function handleDownloadPdf() {
-    downloadingPdf.value = true;
-    try {
-        const supabase = useSupabaseClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error("未登录");
-
-        const res = await fetch(`/api/orders/${orderId}/pdf`, {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        if (!res.ok) throw new Error("PDF 生成失败");
-
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `order-${orderId}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-    } catch (e: any) {
-        toast.add({ title: e.message || "下载失败", color: "error" });
-    } finally {
-        downloadingPdf.value = false;
-    }
-}
-
-// Supabase Edge Function
 // async function handleDownloadPdf() {
+//     console.log(orderId);
 //     downloadingPdf.value = true;
 //     try {
 //         const supabase = useSupabaseClient();
-//         const {
-//             data: { session },
-//         } = await supabase.auth.getSession();
+//         const { data: { session } } = await supabase.auth.getSession();
 //         if (!session) throw new Error("未登录");
 
-//         // 从运行时配置读取 Supabase URL（@nuxtjs/supabase 自动注入）
-//         const supabaseUrl = useRuntimeConfig().public.supabase.url as string;
-//         const edgeFnUrl = `${supabaseUrl}/functions/v1/order-pdf?id=${orderId}`;
-
-//         const res = await fetch(edgeFnUrl, {
-//             headers: {
-//                 Authorization: `Bearer ${session.access_token}`,
-//                 // Edge Function 需要 anon key 做网关鉴权
-//                 apikey: useRuntimeConfig().public.supabase.key as string,
-//             },
+//         const res = await fetch(`/api/orders/${orderId}/pdf`, {
+//             headers: { Authorization: `Bearer ${session.access_token}` },
 //         });
-
-//         if (!res.ok) {
-//             const err = await res.json().catch(() => ({}));
-//             throw new Error(err.error ?? "PDF 生成失败");
-//         }
+//         if (!res.ok) throw new Error("PDF 生成失败");
 
 //         const blob = await res.blob();
 //         const url = URL.createObjectURL(blob);
@@ -233,6 +193,51 @@ async function handleDownloadPdf() {
 //         downloadingPdf.value = false;
 //     }
 // }
+
+// Supabase Edge Function
+async function handleDownloadPdf() {
+    downloadingPdf.value = true;
+    try {
+        const supabase = useSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("未登录");
+
+        // 直接从 supabase client 实例拿 URL 和 anon key
+        const supabaseUrl = (supabase as any).supabaseUrl as string;
+        // const supabaseKey = (supabase as any).supabaseKey as string;
+        const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impyd2xhZ2t3bGJ1cGZmdWVrYXdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MDM4NzQsImV4cCI6MjA4OTM3OTg3NH0.Lgk4LOmin-MEFTIT02i83JRmGZSZkk_vecb8QpmXpf4"
+
+        // console.log(`supabaseUrl=${supabaseUrl}`)
+        // console.log(`supabaseKey=${supabaseKey}`)
+
+        // console.log(`access_token=${session.access_token}`)
+        // console.log(`anonKey=${anonKey}`)
+
+        const res = await fetch(`${supabaseUrl}/functions/v1/order-pdf?id=${orderId}`, {
+            headers: {
+                Authorization: `Bearer ${session.access_token}`,
+                apikey: anonKey,
+            },
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error ?? "PDF 生成失败");
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `order-${orderId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e: any) {
+        toast.add({ title: e.message || "下载失败", color: "error" });
+    } finally {
+        downloadingPdf.value = false;
+    }
+}
 
 
 await orderStore.fetchOrder(orderId);

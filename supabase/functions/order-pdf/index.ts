@@ -6,6 +6,8 @@
 // 响应：  application/pdf
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { fontBase64 } from "./font.ts";
+
 // jsPDF via esm.sh（支持 Deno）
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 
@@ -91,6 +93,11 @@ Deno.serve(async (req) => {
 
 function buildPdf(order: any): Uint8Array {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+  doc.addFileToVFS("NotoSansSC.ttf", fontBase64);
+  doc.addFont("NotoSansSC.ttf", "NotoSansSC", "normal");
+  doc.setFont("NotoSansSC");
+
   const addr = order.address_snapshot as any;
   const items = (order.order_items ?? []) as any[];
 
@@ -120,10 +127,10 @@ function buildPdf(order: any): Uint8Array {
   doc.rect(0, 0, PAGE_W, 14, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("NotoSansSC", "bold");
   text("MyShop", MARGIN, 9.5);
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("NotoSansSC", "normal");
   text("Order Receipt", PAGE_W - MARGIN, 9.5, { align: "right" });
 
   doc.setTextColor(30, 30, 30);
@@ -131,11 +138,11 @@ function buildPdf(order: any): Uint8Array {
 
   // ── 标题 ──
   doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("NotoSansSC", "bold");
   text(`Order #${order.id}`, MARGIN, y);
 
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("NotoSansSC", "normal");
   doc.setTextColor(120, 120, 120);
   text(
     `Created: ${new Date(order.created_at).toLocaleString("zh-CN")}`,
@@ -164,7 +171,7 @@ function buildPdf(order: any): Uint8Array {
   doc.roundedRect(MARGIN, y, 32, 7, 1.5, 1.5, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(7.5);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("NotoSansSC", "bold");
   text(statusLabel, MARGIN + 16, y + 4.7, { align: "center" });
 
   doc.setTextColor(30, 30, 30);
@@ -177,11 +184,11 @@ function buildPdf(order: any): Uint8Array {
 
   // ── 收货地址 ──
   doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("NotoSansSC", "bold");
   doc.setTextColor(80, 80, 80);
   text("SHIPPING ADDRESS", MARGIN, y);
   y += 5;
-  doc.setFont("helvetica", "normal");
+  doc.setFont("NotoSansSC", "normal");
   doc.setTextColor(30, 30, 30);
   doc.setFontSize(9.5);
   text(`${addr.receiver}   ${addr.phone}`, MARGIN, y);
@@ -207,7 +214,7 @@ function buildPdf(order: any): Uint8Array {
   doc.setFillColor(245, 245, 245);
   doc.rect(MARGIN, y, CONTENT_W, 8, "F");
   doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("NotoSansSC", "bold");
   doc.setTextColor(100, 100, 100);
 
   const COL = {
@@ -226,7 +233,7 @@ function buildPdf(order: any): Uint8Array {
   y += 9;
 
   // 商品行
-  doc.setFont("helvetica", "normal");
+  doc.setFont("NotoSansSC", "normal");
   doc.setTextColor(30, 30, 30);
 
   for (const item of items) {
@@ -251,9 +258,9 @@ function buildPdf(order: any): Uint8Array {
     doc.setFontSize(9);
     text(String(item.quantity), COL.qty, y + 5);
     text(`¥${item.unit_price.toFixed(2)}`, COL.price, y + 5);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("NotoSansSC", "bold");
     text(`¥${subtotal.toFixed(2)}`, COL.total, y + 5, { align: "right" });
-    doc.setFont("helvetica", "normal");
+    doc.setFont("NotoSansSC", "normal");
 
     y += rowH;
 
@@ -274,7 +281,7 @@ function buildPdf(order: any): Uint8Array {
   const LABEL_X = RIGHT - 58;
 
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("NotoSansSC", "normal");
   doc.setTextColor(80, 80, 80);
 
   text("Subtotal", LABEL_X, y);
@@ -301,7 +308,7 @@ function buildPdf(order: any): Uint8Array {
 
   doc.setTextColor(30, 30, 30);
   doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("NotoSansSC", "bold");
   text("Total", LABEL_X, y);
   text(`¥${(order.total_amount + order.shipping_fee).toFixed(2)}`, RIGHT, y, {
     align: "right",
@@ -310,7 +317,7 @@ function buildPdf(order: any): Uint8Array {
   if (order.payment_method) {
     y += 6;
     doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("NotoSansSC", "normal");
     doc.setTextColor(120, 120, 120);
     const pmMap: Record<string, string> = {
       wechat: "WeChat Pay",
@@ -328,7 +335,7 @@ function buildPdf(order: any): Uint8Array {
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(7.5);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("NotoSansSC", "normal");
     doc.setTextColor(160, 160, 160);
     doc.text(
       `Page ${i} of ${pageCount}   ·   Generated ${new Date().toLocaleString("zh-CN")}   ·   MyShop`,
