@@ -10,8 +10,10 @@ if (user.value && !authStore.profile) {
 }
 
 // 监听 Supabase 认证状态变化
-supabase.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_IN') {
+// ✅ 只保留这一个
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('[auth] event:', event, '| uid:', session?.user?.id)
+  if (event === 'SIGNED_IN' && session?.user) {
     authStore.fetchProfile().catch(() => {})
   } else if (event === 'SIGNED_OUT') {
     authStore.profile = null
@@ -21,6 +23,9 @@ supabase.auth.onAuthStateChange((event) => {
 
 <template>
   <UApp>
-    <NuxtPage />
+    <AppHeader />
+    <main>
+      <NuxtPage />
+    </main>
   </UApp>
 </template>

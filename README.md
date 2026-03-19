@@ -82,3 +82,5 @@ npx supabase db execute --file supabase/migrations/schema.sql --linked
 npx supabase db execute --file supabase/migrations/seed.sql --linked
 
 bun add <包名> --registry=https://registry.npmmirror.com
+
+find . -type f -not -path '*/node_modules/*' -not -path '*/.nuxt/*' -not -path '*/.git/*' -not -path '*/.output/*'

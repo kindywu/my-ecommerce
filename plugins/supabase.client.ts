@@ -1,9 +1,4 @@
-// plugins/supabase.client.ts
-export default defineNuxtPlugin(async () => {
-  const user = useSupabaseUser();
+export default defineNuxtPlugin(() => {
+  const supabase = useSupabaseClient();
   const authStore = useAuthStore();
-
-  if (user.value && !authStore.profile) {
-    await authStore.fetchProfile().catch(() => {});
-  }
 });
