@@ -1,6 +1,11 @@
 export default defineNuxtConfig({
   compatibilityDate: "2026-03-17",
-  modules: ["@nuxtjs/supabase", "@pinia/nuxt", "@nuxt/ui"],
+  modules: [
+    "@nuxtjs/supabase",
+    "@pinia/nuxt",
+    "@nuxt/ui",
+    "pinia-plugin-persistedstate/nuxt",
+  ],
   css: ["~/assets/css/main.css"],
   ui: { fonts: false },
   devtools: { enabled: true },
@@ -9,6 +14,11 @@ export default defineNuxtConfig({
       login: "/auth/login",
       callback: "/auth/confirm",
       exclude: ["/", "/auth/*", "/products", "/products/*"],
+    },
+  },
+  vite: {
+    optimizeDeps: {
+      include: ["@vue/devtools-core", "@vue/devtools-kit", "@vueuse/core"],
     },
   },
 });
