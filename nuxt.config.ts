@@ -1,10 +1,14 @@
 export default defineNuxtConfig({
   compatibilityDate: "2026-03-17",
+  modules: ["@nuxtjs/supabase", "@pinia/nuxt", "@nuxt/ui"],
+  css: ["~/assets/css/main.css"],
+  ui: { fonts: false },
   devtools: { enabled: true },
-  runtimeConfig: {
-    public: {
-      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
-      supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY,
+  supabase: {
+    redirectOptions: {
+      login: "/auth/login",
+      callback: "/auth/confirm",
+      exclude: ["/", "/auth/*", "/products", "/products/*"],
     },
   },
 });

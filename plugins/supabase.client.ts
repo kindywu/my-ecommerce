@@ -1,16 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+// plugins/supabase.client.ts
+export default defineNuxtPlugin(async () => {
+  const user = useSupabaseUser();
+  const authStore = useAuthStore();
 
-export default defineNuxtPlugin(() => {
-  const config = useRuntimeConfig();
-
-  const supabase = createClient(
-    config.public.supabaseUrl!,
-    config.public.supabaseAnonKey!,
-  );
-
-  return {
-    provide: {
-      supabase,
-    },
-  };
+  if (user.value && !authStore.profile) {
+    await authStore.fetchProfile().catch(() => {});
+  }
 });

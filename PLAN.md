@@ -1,413 +1,363 @@
-**Bun + Nuxt 4 + Supabase + Pinia + Tailwind CSS** 
+以下是针对 **Bun + Nuxt 4 + Supabase + Pinia + @nuxt/ui** 电商网站的完整开发计划，分为多个阶段，每个阶段都可以直接交给大模型执行。---
+
+下面是每个阶段的完整执行 Prompt，你可以直接复制给大模型执行。
 
 ---
 
-# 电商网站开发实施计划
+## 阶段 1 · 项目初始化与环境配置
 
-## 阶段一：项目初始化与基础配置
+```
+使用以下技术栈初始化一个电商项目：
+- 包管理器：Bun
+- 框架：Nuxt 4（nuxt@latest）
+- UI 组件库：@nuxt/ui v3（基于 Tailwind v4）
+- 状态管理：@pinia/nuxt
+- 后端服务：@nuxtjs/supabase
+- 类型安全：TypeScript
 
----
+请完成以下步骤：
+1. 用 `bun create nuxt` 创建项目，选择 TypeScript
+2. 安装所有依赖：`bun add @nuxt/ui @pinia/nuxt @nuxtjs/supabase`
+3. 配置 nuxt.config.ts，注册所有模块
+4. 创建 .env 文件模板（SUPABASE_URL、SUPABASE_ANON_KEY）
+5. 配置 app.config.ts 设置 @nuxt/ui 主题颜色（primary: emerald）
+6. 创建项目目录结构：
+   - stores/（Pinia stores）
+   - types/（TypeScript 类型）
+   - composables/（组合式函数）
+   - utils/（工具函数）
+7. 在 app.vue 中集成 UApp 组件
 
-### Step 1 — 项目脚手架初始化
-
-**发给大模型的 Prompt：**
-
-> 使用 Bun 初始化一个 Nuxt 4（nuxt v4.x）项目，要求：
-> 1. 使用 `bunx nuxi@latest init` 创建项目，包管理器选 Bun
-> 2. 安装依赖：`@nuxtjs/supabase`、`@pinia/nuxt`、`@nuxtjs/tailwindcss`、`pinia`
-> 3. 输出完整的 `nuxt.config.ts`，启用以上三个模块
-> 4. 输出 `tailwind.config.ts`，content 路径覆盖 Nuxt 4 的 `app/` 目录结构
-> 5. 输出 `.env.example`，包含 `SUPABASE_URL` 和 `SUPABASE_KEY`
-> 6. 所有命令使用 `bun` 而非 `npm`/`yarn`
-
----
-
-### Step 2 — Supabase 数据库 Schema 设计
-
-**发给大模型的 Prompt：**
-
-> 为一个电商网站设计 Supabase（PostgreSQL）数据库 Schema，包含以下表并输出完整 SQL：
->
-> - `profiles`：用户扩展信息（关联 auth.users，字段：id, full_name, avatar_url, phone, created_at）
-> - `categories`：商品分类（id, name, slug, parent_id, image_url, sort_order）
-> - `products`：商品（id, name, slug, description, price, compare_price, stock, category_id, images jsonb[], is_active, created_at）
-> - `product_variants`：商品规格（id, product_id, name, value, price_modifier, stock）
-> - `addresses`：收货地址（id, user_id, label, receiver, phone, province, city, district, detail, is_default）
-> - `orders`：订单（id, user_id, status enum, total_amount, shipping_fee, address snapshot jsonb, created_at）
-> - `order_items`：订单详情（id, order_id, product_id, variant_id, quantity, unit_price, product_snapshot jsonb）
-> - `cart_items`：购物车（id, user_id, product_id, variant_id, quantity）
-> - `reviews`：评价（id, user_id, product_id, order_id, rating, content, images text[]）
->
-> 要求：
-> 1. 添加必要的外键约束和索引
-> 2. 为 `orders.status` 创建 enum 类型：pending / paid / shipped / delivered / cancelled / refunded
-> 3. 为 `profiles` 添加 `on auth.users insert` 的触发器自动创建记录
-> 4. 配置 RLS（Row Level Security）策略，确保用户只能访问自己的数据
+输出完整的配置文件内容和目录结构说明。
+```
 
 ---
 
-### Step 3 — Nuxt 4 目录结构规划
+## 阶段 2 · Supabase 数据库设计
 
-**发给大模型的 Prompt：**
+```
+为电商网站设计并创建 Supabase 数据库，包含以下内容：
 
-> 为 Nuxt 4 电商项目规划完整的 `app/` 目录结构，输出每个文件/目录的用途说明（树形结构），包含：
->
-> - `app/pages/`：首页、商品列表、商品详情、购物车、结算、订单列表、订单详情、用户中心、登录/注册
-> - `app/components/`：按功能拆分（product/、cart/、order/、ui/、layout/）
-> - `app/composables/`：useCart, useAuth, useProduct, useOrder, useAddress
-> - `app/stores/`：cart.ts, user.ts, ui.ts（Pinia）
-> - `app/middleware/`：auth.ts（需要登录的页面守卫）
-> - `server/api/`：支付回调、订单创建等服务端接口
-> - `app/utils/`：price.ts（价格格式化）、validator.ts
-> - `app/types/`：index.ts（所有 TypeScript 类型定义）
->
-> 同时输出 `app/types/index.ts` 的完整内容，导出所有业务实体的 TypeScript 接口
+1. 创建以下数据表的 SQL 迁移文件：
+   - profiles（用户档案：id, username, avatar_url, phone, created_at）
+   - categories（商品分类：id, name, slug, parent_id, image_url, sort_order）
+   - products（商品：id, name, slug, description, price, original_price, stock, category_id, images jsonb, is_active, created_at）
+   - cart_items（购物车：id, user_id, product_id, quantity, created_at）
+   - addresses（收货地址：id, user_id, name, phone, province, city, district, detail, is_default）
+   - orders（订单：id, user_id, address_id, status enum, total_amount, payment_method, paid_at, created_at）
+   - order_items（订单明细：id, order_id, product_id, quantity, price, product_snapshot jsonb）
 
----
+2. 为每张表配置 Row Level Security (RLS) 策略：
+   - profiles：用户只能读写自己的档案
+   - cart_items：用户只能操作自己的购物车
+   - addresses：用户只能操作自己的地址
+   - orders/order_items：用户只能查看自己的订单
+   - products/categories：所有人可读，仅管理员可写
 
-## 阶段二：认证与用户系统
+3. 创建必要的数据库函数：
+   - get_cart_total(user_id)：计算购物车总价
+   - create_order_from_cart(user_id, address_id)：从购物车创建订单并清空购物车（事务）
 
----
+4. 创建索引：products(category_id)、orders(user_id, status)、cart_items(user_id)
 
-### Step 4 — 用户认证页面与逻辑
+5. 在 types/database.ts 中用 TypeScript 定义所有表的类型（符合 Supabase 生成格式）
 
-**发给大模型的 Prompt：**
-
-> 在 Nuxt 4 + @nuxtjs/supabase 项目中实现用户认证功能，输出以下文件：
->
-> 1. `app/pages/auth/login.vue`：邮箱+密码登录表单，使用 `useSupabaseClient()` 调用 `auth.signInWithPassword`，登录成功跳转首页，错误显示提示
-> 2. `app/pages/auth/register.vue`：注册表单（邮箱、密码、确认密码、昵称），调用 `auth.signUp`，注册后提示验证邮件
-> 3. `app/middleware/auth.ts`：路由守卫，使用 `useSupabaseUser()` 检查登录状态，未登录重定向到 `/auth/login`，保存 `redirect` 参数
-> 4. `app/stores/user.ts`：Pinia store，state 包含 profile 信息，actions：fetchProfile、updateProfile、logout
-> 5. `app/composables/useAuth.ts`：封装登录、登出、注册方法，处理 loading 和 error 状态
->
-> 使用 Tailwind CSS 编写 UI，表单需有完整的前端校验
+输出完整 SQL 和 TypeScript 类型文件。
+```
 
 ---
 
-### Step 5 — 用户中心页面
+## 阶段 3 · 认证系统
 
-**发给大模型的 Prompt：**
+```
+基于 @nuxtjs/supabase 实现认证系统：
 
-> 在 Nuxt 4 项目中实现用户中心页面，路由 `/account`，需要 auth 中间件保护，输出：
->
-> 1. `app/pages/account/index.vue`：用户信息展示+编辑（头像、昵称、手机号），调用 Supabase 更新 `profiles` 表
-> 2. `app/pages/account/addresses.vue`：收货地址列表，支持新增/编辑/删除/设为默认，CRUD 操作 `addresses` 表
-> 3. `app/pages/account/orders.vue`：订单列表（简版，分页），显示订单号、状态、金额、时间
-> 4. `app/components/layout/AccountSidebar.vue`：账户页侧边导航组件
->
-> 使用 Tailwind CSS，地址表单用 `<dialog>` 或 modal 组件实现
+1. Supabase 控制台配置（重要）：
+   - Authentication → Settings → 关闭 "Enable email confirmations"
+   - 这样用户注册后直接登录，无需验证邮件
 
----
+2. 创建认证相关页面（使用 @nuxt/ui 组件）：
+   - pages/auth/login.vue（邮箱+密码登录）
+   - pages/auth/register.vue（注册，注册成功后自动跳转首页）
+     · 注册完成后调用 supabase.auth.signUp()
+     · 同时在 profiles 表 insert 一条用户记录
+     · 无需邮件确认，注册即登录
 
-## 阶段三：商品系统
+3. 创建 stores/auth.ts（Pinia store）：
+   - state: user, profile, loading
+   - actions: login, register, logout, updateProfile, fetchProfile
+   - getters: isLoggedIn, isAdmin
 
----
+4. 创建路由中间件：
+   - middleware/auth.ts（未登录跳转 /auth/login）
+   - middleware/guest.ts（已登录跳转首页）
+   - middleware/admin.ts（非管理员跳转 403）
 
-### Step 6 — Pinia 商品 Store 与 Composable
+5. 创建 composables/useAuth.ts 封装常用认证操作
 
-**发给大模型的 Prompt：**
+6. 在 layouts/default.vue 中：
+   - 顶部导航显示登录状态
+   - 头像下拉菜单（个人中心、我的订单、退出登录）
 
-> 在 Nuxt 4 + Pinia + Supabase 项目中实现商品数据层，输出：
->
-> 1. `app/composables/useProduct.ts`：
->    - `fetchProducts(params: { categorySlug?, page?, pageSize?, sort?, search? })`：查询商品列表，支持分类过滤、关键词搜索、分页、排序（price_asc/price_desc/newest），返回 `{ data, total, page }`
->    - `fetchProductBySlug(slug: string)`：查询商品详情，关联查询 category 和 variants
->    - `fetchCategories()`：查询所有分类（含层级）
->    所有方法使用 `useSupabaseClient()` 操作 Supabase，包含 loading 和 error 状态
->
-> 2. `app/types/index.ts` 中的相关类型：`Product`, `ProductVariant`, `Category`（完整字段）
+7. 监听 Supabase Auth 的 onAuthStateChange 事件，保持状态同步
 
----
-
-### Step 7 — 商品列表页
-
-**发给大模型的 Prompt：**
-
-> 在 Nuxt 4 项目中实现商品列表页 `app/pages/products/index.vue`，要求：
->
-> 1. URL 参数支持：`?category=xxx&page=1&sort=price_asc&search=关键词`
-> 2. 左侧分类筛选栏（从 useProduct 获取分类树）
-> 3. 顶部排序切换（最新/价格升序/价格降序）
-> 4. 商品网格（响应式：手机2列，平板3列，桌面4列）
-> 5. 分页组件
-> 6. 搜索栏，输入后更新 URL query
-> 7. `app/components/product/ProductCard.vue`：商品卡片，显示图片、名称、价格、原价（划线），加入购物车按钮
->
-> 使用 Nuxt 的 `useRoute`/`useRouter` 管理 URL 参数，使用 `useProduct` composable 获取数据，Tailwind CSS 布局
+页面只需 login.vue 和 register.vue 两个，使用 @nuxt/ui 的
+UForm + UFormField + UInput 组件，添加表单验证（使用 valibot）。
+登录/注册失败时在表单顶部显示 UAlert 错误提示。
+```
 
 ---
 
-### Step 8 — 商品详情页
+## 阶段 4 · 商品模块
 
-**发给大模型的 Prompt：**
+```
+实现完整的商品展示模块：
 
-> 在 Nuxt 4 项目中实现商品详情页 `app/pages/products/[slug].vue`，要求：
->
-> 1. 使用 `useSeoMeta` 设置商品名称和描述为 SEO meta
-> 2. 图片轮播（使用纯 CSS + Vue 实现，不引入额外组件库）：主图大图 + 缩略图列表
-> 3. 商品名称、价格展示（含原价划线）
-> 4. 规格选择器：从 `product_variants` 读取，点击选中，影响库存和价格显示
-> 5. 数量选择器（+-按钮，最大值=库存）
-> 6. "加入购物车"和"立即购买"按钮
-> 7. 商品详情描述区域（富文本 HTML 渲染）
-> 8. 调用 `useCart` 的 `addToCart` 方法处理加购逻辑
->
-> 输出完整的 Vue 单文件组件，使用 Tailwind CSS
+1. 创建 composables/useProducts.ts：
+   - getProducts({ categoryId, search, page, pageSize, sortBy })
+   - getProduct(slug)
+   - getCategories()
+   - 使用 useAsyncData + Supabase 客户端
 
----
+2. 创建以下页面：
+   - pages/index.vue（首页）：
+     · 横幅 Banner（UCarousel）
+     · 分类导航横向滚动
+     · 推荐商品网格（4列）
+   
+   - pages/products/index.vue（商品列表）：
+     · 左侧分类树形过滤
+     · 顶部排序（价格/销量/最新）
+     · 价格区间过滤（USlider）
+     · 商品卡片网格（响应式：1/2/3/4列）
+     · 分页（UPagination）
+     · URL 参数同步过滤状态
+   
+   - pages/products/[slug].vue（商品详情）：
+     · 图片轮播（主图+缩略图）
+     · 价格、库存状态
+     · 数量选择器
+     · 加入购物车 / 立即购买
+     · 商品描述（富文本）
+     · 面包屑导航
 
-## 阶段四：购物车系统
+3. 创建 components/product/ProductCard.vue（商品卡片组件）
+4. 创建 components/product/ProductGrid.vue（响应式网格）
+5. 图片使用 Nuxt Image（@nuxt/image）优化
 
----
-
-### Step 9 — 购物车 Store 与 Composable
-
-**发给大模型的 Prompt：**
-
-> 在 Nuxt 4 + Pinia + Supabase 项目中实现购物车系统，输出：
->
-> 1. `app/stores/cart.ts`（Pinia store）：
->    - state: `items: CartItem[]`（含 product 快照信息）
->    - getters: `totalCount`, `totalAmount`, `isEmpty`
->    - actions: `loadCart()`（从 Supabase 加载）, `addItem(productId, variantId, qty)`, `updateQty(itemId, qty)`, `removeItem(itemId)`, `clearCart()`
->    - 未登录时用 `localStorage` 临时存储，登录后合并到数据库
->
-> 2. `app/composables/useCart.ts`：封装 store，提供 `addToCart` 方法（含 toast 反馈）
->
-> 3. `app/types/index.ts` 补充 `CartItem` 类型
->
-> 登录状态变化时（`watch(user, ...)`）自动触发购物车同步
-
----
-
-### Step 10 — 购物车页面
-
-**发给大模型的 Prompt：**
-
-> 在 Nuxt 4 项目中实现购物车页面 `app/pages/cart.vue`，要求：
->
-> 1. 从 `cartStore` 读取购物车数据
-> 2. 商品列表：图片、名称、规格、单价、数量调节（+-）、小计、删除按钮
-> 3. 全选/反选 checkbox，批量删除
-> 4. 右侧价格汇总卡片：已选商品数、合计金额、"去结算"按钮
-> 5. 购物车为空时显示空状态插图和"去购物"按钮
-> 6. `app/components/cart/CartItem.vue`：单个购物车条目组件
->
-> 使用 Tailwind CSS，数量变更实时调用 `cartStore.updateQty`，乐观更新 UI
+所有数据请求使用 useAsyncData，添加 loading 和 error 状态处理。
+```
 
 ---
 
-## 阶段五：订单与结算
+## 阶段 5 · 购物车 & Pinia 状态管理
+
+```
+实现购物车功能，使用 Pinia 管理状态：
+
+1. 创建 stores/cart.ts：
+   - state: items(CartItem[]), loading, syncing
+   - getters: totalItems, totalAmount, isEmpty
+   - actions:
+     · addItem(productId, quantity)：已存在则增加数量
+     · removeItem(productId)
+     · updateQuantity(productId, quantity)
+     · clearCart()
+     · syncToSupabase()：登录用户同步到数据库
+     · loadFromSupabase()：登录后从数据库加载
+   - 使用 pinia-plugin-persistedstate 本地持久化（localStorage）
+   - 监听 auth 状态变化：登录时合并本地与云端购物车
+
+2. 创建 pages/cart.vue（购物车页面）：
+   - 商品列表（图片、名称、单价、数量+-、小计）
+   - 数量修改实时更新（防抖 500ms 后同步）
+   - 删除商品（带确认 UModal）
+   - 全选/批量删除
+   - 右侧价格汇总卡片（商品总价、运费、实付金额）
+   - 结算按钮（未登录则跳转登录）
+   - 空购物车状态（UEmptyState）
+
+3. 创建 components/cart/CartDrawer.vue（侧边栏购物车）：
+   - 从顶部导航图标触发 UDrawer
+   - 显示商品列表 + 总价
+   - 快速删除
+   - 去结算按钮
+
+4. 购物车图标显示商品数量徽标（UBadge）
+
+安装：`bun add pinia-plugin-persistedstate`，在 nuxt.config.ts 中配置。
+```
 
 ---
 
-### Step 11 — 结算页面
+## 阶段 6 · 订单与结账流程
 
-**发给大模型的 Prompt：**
+```
+实现完整的订单流程：
 
-> 在 Nuxt 4 项目中实现结算页面 `app/pages/checkout.vue`（需要 auth 中间件），要求：
->
-> 1. 从购物车读取选中商品，若为空重定向回购物车
-> 2. 收货地址选择：列出用户地址列表，可快速新增地址（内联表单）
-> 3. 订单明细：商品清单、小计、运费（固定10元，满99免运费）、总计
-> 4. 支付方式选择（模拟：微信支付 / 支付宝，仅 UI，不接真实支付）
-> 5. 提交订单按钮：调用 `useOrder` 的 `createOrder` 方法
-> 6. 提交成功后跳转 `/orders/[id]`，并清空购物车中已结算商品
->
-> 输出完整 Vue 文件，Tailwind CSS
+1. 创建 pages/checkout/index.vue（结账页）：
+   分三步（USteps 组件）：
+   步骤1 - 确认商品：购物车商品只读列表
+   步骤2 - 填写地址：
+     · 已有地址列表（URadioGroup 选择）
+     · 新增地址表单
+   步骤3 - 确认支付：
+     · 订单汇总
+     · 支付方式选择（模拟：微信/支付宝/货到付款）
+     · 提交订单按钮（调用 Supabase 数据库函数 create_order_from_cart）
 
----
+2. 创建 pages/orders/index.vue（我的订单列表）：
+   - 状态标签页筛选（全部/待付款/待发货/已完成/已取消）
+   - 订单卡片（订单号、时间、商品缩略图、总价、状态、操作按钮）
+   - 无限滚动或分页
 
-### Step 12 — 订单 Composable 与服务端接口
+3. 创建 pages/orders/[id].vue（订单详情）：
+   - 订单进度条（UStepper）
+   - 收货地址
+   - 商品明细
+   - 价格明细
+   - 取消订单功能（待付款状态可取消）
 
-**发给大模型的 Prompt：**
+4. 创建 stores/order.ts（Pinia store）：
+   - createOrder(addressId)
+   - fetchOrders(status?)
+   - fetchOrder(id)
+   - cancelOrder(id)
 
-> 在 Nuxt 4 + Supabase 项目中实现订单创建逻辑，输出：
->
-> 1. `app/composables/useOrder.ts`：
->    - `createOrder(params: { addressId, items, paymentMethod })`：在 Supabase 中事务性创建 `orders` + `order_items` 记录，存储商品快照，清空对应购物车条目，返回 orderId
->    - `fetchOrders(page?)`：分页获取当前用户订单列表
->    - `fetchOrderById(id)`：获取订单详情（含 order_items 和商品信息）
->    - `cancelOrder(id)`：取消订单（校验状态为 pending 才可取消）
->
-> 2. `server/api/orders/create.post.ts`：Nuxt server route，服务端验证订单合法性（库存校验、价格校验），调用 Supabase admin client 创建订单
->
-> 3. `app/types/index.ts` 补充 `Order`, `OrderItem` 类型
+5. 地址管理页 pages/profile/addresses.vue（增删改查默认地址）
 
----
-
-### Step 13 — 订单详情页
-
-**发给大模型的 Prompt：**
-
-> 在 Nuxt 4 项目中实现订单详情页 `app/pages/orders/[id].vue`，要求：
->
-> 1. 订单状态进度条：待付款 → 已付款 → 已发货 → 已完成（根据 status 高亮当前步骤）
-> 2. 收货地址信息卡片（从 order snapshot 读取）
-> 3. 商品明细列表（图片、名称、规格、数量、单价）
-> 4. 费用汇总（小计、运费、合计）
-> 5. 操作按钮区：status=pending 显示"取消订单"和"模拟付款"按钮；status=delivered 显示"确认收货"
-> 6. "模拟付款"按钮将订单状态更新为 paid
->
-> 使用 Tailwind CSS，状态步骤条用纯 CSS + flex 实现
+结账成功后跳转 /orders/[id]?success=true，显示成功提示。
+```
 
 ---
 
-## 阶段六：全局 UI 组件
+## 阶段 7 · 管理后台
+
+```
+实现管理员后台（路径前缀 /admin）：
+
+1. 创建 layouts/admin.vue：
+   - 左侧固定导航侧边栏（UNavigationMenu 垂直）
+   - 顶部面包屑
+   - 仅允许 isAdmin 用户访问（middleware/admin.ts）
+
+2. 创建以下后台页面：
+
+   pages/admin/index.vue（数据看板）：
+   - 今日订单数、总销售额、用户数、商品数（UCard 统计）
+   - 最近7天销售折线图（用 @nuxt/ui charts 或 Chart.js）
+   - 最新订单表格（最近10条）
+
+   pages/admin/products/index.vue（商品管理）：
+   - 带搜索、分类过滤的 UTable
+   - 上下架切换（UToggle，乐观更新）
+   - 批量删除
+   - 链接到新增/编辑页
+
+   pages/admin/products/[id].vue（商品编辑）：
+   - 完整商品表单（UForm）
+   - 多图上传（Supabase Storage，拖拽排序）
+   - 富文本描述（使用 @vueup/vue-quill 或 tiptap）
+   - 发布/存草稿
+
+   pages/admin/orders/index.vue（订单管理）：
+   - 订单列表（带状态筛选、时间范围筛选）
+   - 点击查看详情 + 修改订单状态（发货、完成）
+
+3. 在 profiles 表中添加 role 字段（user/admin），RLS 策略更新
+4. Supabase Storage bucket：products-images（公开读，登录写）
+
+所有管理操作添加操作确认弹窗和成功/失败 toast 提示（UNotification）。
+```
 
 ---
 
-### Step 14 — 导航栏与布局
+## 阶段 8 · UI 完善与响应式
 
-**发给大模型的 Prompt：**
+```
+完善整体 UI 体验：
 
-> 在 Nuxt 4 项目中实现全局布局组件，输出：
->
-> 1. `app/components/layout/Navbar.vue`：顶部导航栏，包含：
->    - Logo（左）
->    - 搜索框（中，输入回车跳转 `/products?search=xxx`）
->    - 右侧：购物车图标（badge 显示数量，来自 cartStore.totalCount）、用户头像下拉菜单（已登录显示昵称和菜单，未登录显示"登录/注册"）
->    - 移动端汉堡菜单
->
-> 2. `app/layouts/default.vue`：默认布局，包含 Navbar + `<slot>` + Footer
->
-> 3. `app/components/layout/Footer.vue`：简洁页脚，版权信息 + 快速链接
->
-> 4. `app/components/ui/Toast.vue`：全局 Toast 通知组件（success/error/info），使用 `app/stores/ui.ts` 管理消息队列，支持自动消失
->
-> 使用 Tailwind CSS，导航栏需 sticky + 磨砂玻璃效果
+1. 主题与全局样式：
+   - app.config.ts 配置完整的 @nuxt/ui 主题（colors, fonts, radius）
+   - 实现暗色模式切换（useColorMode，保存到 localStorage）
+   - 顶部导航添加暗色模式切换按钮（USun/UMoon 图标）
 
----
+2. 全局布局优化：
+   - layouts/default.vue：
+     · PC 端顶部导航（logo、分类菜单、搜索框、购物车、用户头像）
+     · 移动端汉堡菜单（UDrawer 侧边栏导航）
+     · 底部 Footer（链接、版权信息）
+   - 搜索框：实时搜索联想（useDebounce + Supabase ILIKE 查询）
 
-### Step 15 — 通用 UI 组件库
+3. 加载与空状态处理：
+   - 每个数据请求添加骨架屏（USkeleton）
+   - 空状态使用 UEmptyState 组件
+   - 错误边界处理（error.vue）
+   - 全局 loading 进度条（nuxt 内置 loadingIndicator）
 
-**发给大模型的 Prompt：**
+4. 响应式断点（@nuxt/ui / Tailwind）：
+   - 商品网格：sm:2列 md:3列 lg:4列
+   - 购物车：移动端竖向排列
+   - 结账步骤：移动端垂直
 
-> 在 Nuxt 4 + Tailwind CSS 项目中实现以下通用 UI 组件（输出每个文件的完整代码）：
->
-> 1. `app/components/ui/Button.vue`：Props: variant(primary/secondary/ghost/danger), size(sm/md/lg), loading, disabled；loading 时显示 spinner
-> 2. `app/components/ui/Input.vue`：Props: label, placeholder, error, type, modelValue；支持 v-model
-> 3. `app/components/ui/Modal.vue`：Props: modelValue(v-model 控制显示), title；slot: default, footer；点击遮罩关闭；ESC 键关闭
-> 4. `app/components/ui/Pagination.vue`：Props: total, page, pageSize；emit: update:page；显示首页/上一页/页码/下一页/末页
-> 5. `app/components/ui/EmptyState.vue`：Props: title, description, actionText, actionLink；显示空状态插图（SVG inline）和操作按钮
-> 6. `app/components/ui/LoadingSpinner.vue`：全屏或局部 loading 遮罩
->
-> 所有组件使用 TypeScript defineProps，Tailwind CSS 样式
+5. 表单体验优化：
+   - 所有表单添加实时校验反馈
+   - 提交按钮 loading 状态
+   - 操作成功/失败全局 Toast 通知
 
----
+6. 性能优化：
+   - 图片懒加载（@nuxt/image lazy 属性）
+   - 路由切换 loading 状态
 
-## 阶段七：首页与搜索
-
----
-
-### Step 16 — 首页
-
-**发给大模型的 Prompt：**
-
-> 在 Nuxt 4 项目中实现电商首页 `app/pages/index.vue`，包含以下区块（使用 Tailwind CSS，所有数据从 Supabase 获取）：
->
-> 1. Hero Banner：全宽轮播图（自动播放+手动切换），数据硬编码3张示例图（使用 picsum.photos 占位图）
-> 2. 商品分类导航：图标+名称的网格，点击跳转 `/products?category=slug`，从 `fetchCategories()` 获取
-> 3. 热销商品区：标题 + 横向滚动商品卡片列表（`is_active=true` 前8个，按 created_at 降序）
-> 4. 促销 Banner：静态两列布局，硬编码文案和背景色
-> 5. 新品推荐：4列商品网格（最新8个商品）
->
-> 使用 `Promise.all` 并行请求所有数据，`useSeoMeta` 设置首页 SEO
+输出修改后的关键组件文件。
+```
 
 ---
 
-### Step 17 — 搜索功能优化
+## 阶段 9 · 性能优化与部署
 
-**发给大模型的 Prompt：**
+```
+完成最终优化和部署配置：
 
-> 在 Nuxt 4 + Supabase 项目中优化搜索体验，输出：
->
-> 1. 在 `app/components/layout/Navbar.vue` 的搜索框添加搜索建议下拉（输入时防抖300ms查询商品名称，最多显示5条，点击直接跳转商品详情）
-> 2. 在 Supabase 的 `products` 表上创建全文搜索索引的 SQL（使用 `tsvector` + `to_tsquery`，支持中文分词使用 `simple` 配置）
-> 3. 修改 `useProduct.ts` 的 `fetchProducts` 方法，当有 `search` 参数时使用 `textSearch` 或 `ilike` 查询
-> 4. `app/pages/products/index.vue` 中搜索结果为空时显示"没有找到相关商品"的空状态组件
->
-> 搜索建议使用 `onClickOutside`（VueUse）关闭，需安装 `@vueuse/nuxt`
+1. SEO 优化：
+   - nuxt.config.ts 配置全局 SEO meta
+   - 每个页面使用 useSeoMeta() 设置动态 title/description
+   - 商品详情页添加 JSON-LD 结构化数据（Product schema）
+   - 生成 sitemap（使用 @nuxtjs/sitemap）
 
----
+2. 渲染策略：
+   - 首页、商品列表：ISR（增量静态再生，routeRules）
+   - 商品详情：SSR + 缓存头
+   - 购物车、订单、个人中心：CSR（client only）
+   
+   nuxt.config.ts 中配置 routeRules：
+   '/'        → { isr: 3600 }
+   '/products/**' → { isr: 1800 }
+   '/cart'    → { ssr: false }
+   '/orders/**' → { ssr: false }
 
-## 阶段八：性能与工程化
+3. 性能：
+   - 启用 Nuxt 图片优化（@nuxt/image + Cloudflare Images 或 Vercel）
+   - 关键 CSS 内联
+   - 第三方脚本延迟加载
 
----
+4. 环境变量配置：
+   - .env.production（Supabase 生产环境密钥）
+   - 运行时配置（runtimeConfig）区分公开/私密变量
 
-### Step 18 — SEO 与 SSR 优化
+5. 部署到 Vercel：
+   - 创建 vercel.json 配置
+   - 设置环境变量
+   - 连接 GitHub 仓库自动 CI/CD
+   - 配置自定义域名
 
-**发给大模型的 Prompt：**
+6. 部署后检查清单：
+   - Supabase RLS 策略全部启用
+   - Storage bucket 权限正确
+   - 生产环境 CORS 配置
+   - Edge Function 超时配置
 
-> 在 Nuxt 4 项目中进行 SEO 和渲染优化，输出以下修改：
->
-> 1. `nuxt.config.ts` 中配置：
->    - `routeRules`：首页和商品列表用 `swr: 60`（Stale-While-Revalidate），商品详情用 `swr: 3600`，购物车/结算/账户页用 `ssr: false`
->    - 配置 `site.url` 用于 sitemap
->
-> 2. `app/pages/products/[slug].vue` 中：
->    - 使用 `useAsyncData` + `useSeoMeta` 设置动态 title/description/og:image
->    - 添加商品的 JSON-LD 结构化数据（`useSchemaOrg` 或手动注入 script tag）
->
-> 3. `app/components/product/ProductCard.vue`：图片使用 Nuxt `<NuxtImg>`，配置懒加载和尺寸
->
-> 4. `nuxt.config.ts` 配置 `@nuxt/image` 模块，provider 使用 `ipx`
-
----
-
-### Step 19 — 错误处理与 Loading 状态
-
-**发给大模型的 Prompt：**
-
-> 在 Nuxt 4 项目中完善错误处理和加载体验，输出：
->
-> 1. `app/error.vue`：自定义错误页面，处理 404（商品不存在）和 500（服务异常），提供"返回首页"按钮
-> 2. `app/stores/ui.ts`（Pinia store）：管理全局 loading 状态和 toast 消息队列，提供 `showToast(message, type)` action
-> 3. 修改所有 composable（useProduct/useCart/useOrder）：统一错误处理，catch 后调用 `uiStore.showToast` 显示错误信息
-> 4. `app/components/ui/PageLoading.vue`：页面切换时顶部进度条（类似 nprogress），在 `app/plugins/loading.client.ts` 中通过 `router.beforeEach/afterEach` 控制
->
-> Toast 组件在 `app/layouts/default.vue` 中全局挂载
+输出 vercel.json、nuxt.config.ts 最终版本和部署步骤文档。
+```
 
 ---
-
-### Step 20 — 环境配置与部署
-
-**发给大模型的 Prompt：**
-
-> 为 Nuxt 4 + Bun 电商项目完成生产环境配置，输出：
->
-> 1. `nuxt.config.ts` 完整最终版本：整合所有模块配置、routeRules、runtimeConfig（公开 supabaseUrl，私有 supabaseServiceKey）
-> 2. `.env.production.example`：所有生产环境变量说明（SUPABASE_URL, SUPABASE_KEY, NUXT_PUBLIC_SITE_URL 等）
-> 3. `Dockerfile`：多阶段构建，使用 `oven/bun` 基础镜像，`bun run build` 后用 node 运行 `.output/server/index.mjs`
-> 4. `.github/workflows/deploy.yml`：GitHub Actions CI/CD，push to main 触发，运行 `bun run lint && bun run build`，然后 Docker build & push 到 ghcr.io
-> 5. `package.json` scripts 补充：`lint`（eslint）、`typecheck`（vue-tsc）、`test`（vitest）
-
----
-
-## 快速参考：步骤总览
-
-| # | 阶段 | 步骤 | 核心产出 |
-|---|------|------|---------|
-| 1 | 初始化 | 项目脚手架 | nuxt.config.ts, tailwind.config.ts |
-| 2 | 初始化 | 数据库 Schema | SQL DDL + RLS 策略 |
-| 3 | 初始化 | 目录结构 + 类型 | types/index.ts |
-| 4 | 认证 | 登录/注册页 | auth pages + middleware |
-| 5 | 认证 | 用户中心 | account pages |
-| 6 | 商品 | 数据层 | useProduct composable |
-| 7 | 商品 | 列表页 | products/index.vue |
-| 8 | 商品 | 详情页 | products/[slug].vue |
-| 9 | 购物车 | 购物车逻辑 | cart store + composable |
-| 10 | 购物车 | 购物车页面 | cart.vue |
-| 11 | 订单 | 结算页 | checkout.vue |
-| 12 | 订单 | 订单逻辑 | useOrder + server API |
-| 13 | 订单 | 订单详情 | orders/[id].vue |
-| 14 | UI | 导航与布局 | Navbar + layouts |
-| 15 | UI | 通用组件 | Button/Input/Modal 等 |
-| 16 | 首页 | 首页 | index.vue |
-| 17 | 搜索 | 搜索优化 | 全文搜索 + 建议下拉 |
-| 18 | 工程化 | SEO + SSR | routeRules + JSON-LD |
-| 19 | 工程化 | 错误处理 | error.vue + toast |
-| 20 | 工程化 | 部署配置 | Dockerfile + CI/CD |
-
-> **建议执行顺序**：严格按 1→20 顺序推进，Step 3 产出的类型文件会被后续所有步骤依赖，Step 15 的 UI 组件可在 Step 14 之后随时补充。

@@ -80,3 +80,5 @@ npx supabase gen types typescript --project-id jrwlagkwlbupffuekawa > app/types/
 
 npx supabase db execute --file supabase/migrations/schema.sql --linked
 npx supabase db execute --file supabase/migrations/seed.sql --linked
+
+bun add <包名> --registry=https://registry.npmmirror.com
