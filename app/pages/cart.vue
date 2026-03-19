@@ -217,6 +217,7 @@ async function executeBatchDelete() {
 
 // ── 结算 ──────────────────────────────────────────────────
 function handleCheckout() {
+    console.log('[cart] items:', cartStore.items.map(i => ({ id: i.product_id, selected: i.selected })))
     if (!authStore.isLoggedIn) {
         router.push('/auth/login')
         return

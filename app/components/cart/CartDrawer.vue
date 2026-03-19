@@ -104,6 +104,7 @@ function handleCheckout() {
         open.value = false
         return
     }
+
     router.push('/checkout')
     open.value = false
 }
