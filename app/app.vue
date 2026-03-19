@@ -6,15 +6,14 @@ const authStore = useAuthStore()
 
 // 页面初始化：已登录但 profile 为空时，主动拉取
 if (user.value && !authStore.profile) {
-  await authStore.fetchProfile().catch(() => {})
+  await authStore.fetchProfile().catch(() => { })
 }
 
 // 监听 Supabase 认证状态变化
 // ✅ 只保留这一个
 supabase.auth.onAuthStateChange((event, session) => {
-  console.log('[auth] event:', event, '| uid:', session?.user?.id)
   if (event === 'SIGNED_IN' && session?.user) {
-    authStore.fetchProfile().catch(() => {})
+    authStore.fetchProfile().catch(() => { })
   } else if (event === 'SIGNED_OUT') {
     authStore.profile = null
   }
