@@ -76,11 +76,20 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 
 supabase database password: `FBaF2VFWscjXW5g5`
 
-npx supabase gen types typescript --project-id jrwlagkwlbupffuekawa > app/types/database.types.ts
+## 启动开发服务器
+bunx nuxt dev 
+
+## 部署数据库迁移
+bunx supabase db push   
+bunx supabase functions deploy order-pdf
+bunx supabase gen types typescript --project-id jrwlagkwlbupffuekawa > app/types/database.types.ts
+
 
 npx supabase db execute --file supabase/migrations/schema.sql --linked
 npx supabase db execute --file supabase/migrations/seed.sql --linked
 
 bun add <包名> --registry=https://registry.npmmirror.com
+bun add -D <包名> --registry=https://registry.npmmirror.com
+
 
 find . -type f -not -path '*/node_modules/*' -not -path '*/.nuxt/*' -not -path '*/.git/*' -not -path '*/.output/*'

@@ -40,10 +40,10 @@
                             <div class="flex flex-col items-center gap-1 flex-shrink-0">
                                 <div class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
                                     :class="stepDone(i)
-                                            ? 'bg-green-500'
-                                            : stepActive(i)
-                                                ? 'bg-gray-900'
-                                                : 'bg-gray-200'
+                                        ? 'bg-green-500'
+                                        : stepActive(i)
+                                            ? 'bg-gray-900'
+                                            : 'bg-gray-200'
                                         ">
                                     <UIcon :name="stepDone(i) ? 'i-lucide-check' : step.icon" class="size-4"
                                         :class="stepDone(i) || stepActive(i) ? 'text-white' : 'text-gray-400'" />
@@ -110,7 +110,13 @@
                 </div>
 
                 <!-- 操作按钮 -->
-                <div class="flex gap-3 justify-end">
+                <div class="flex gap-3 justify-end flex-wrap">
+                    <!-- 下载 PDF -->
+                    <UButton variant="outline" icon="i-lucide-download" :loading="downloadingPdf"
+                        @click="handleDownloadPdf">
+                        下载订单
+                    </UButton>
+
                     <!-- 模拟支付 -->
                     <UButton v-if="order.status === 'pending'" size="lg" class="bg-green-600 hover:bg-green-700"
                         :loading="paying" @click="handlePay">
@@ -158,6 +164,76 @@ const showSuccess = ref(route.query.success === "true");
 const showCancelModal = ref(false);
 const paying = ref(false);
 const cancelling = ref(false);
+const downloadingPdf = ref(false);
+
+// Server-side
+async function handleDownloadPdf() {
+    downloadingPdf.value = true;
+    try {
+        const supabase = useSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("未登录");
+
+        const res = await fetch(`/api/orders/${orderId}/pdf`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!res.ok) throw new Error("PDF 生成失败");
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `order-${orderId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e: any) {
+        toast.add({ title: e.message || "下载失败", color: "error" });
+    } finally {
+        downloadingPdf.value = false;
+    }
+}
+
+// Supabase Edge Function
+// async function handleDownloadPdf() {
+//     downloadingPdf.value = true;
+//     try {
+//         const supabase = useSupabaseClient();
+//         const {
+//             data: { session },
+//         } = await supabase.auth.getSession();
+//         if (!session) throw new Error("未登录");
+
+//         // 从运行时配置读取 Supabase URL（@nuxtjs/supabase 自动注入）
+//         const supabaseUrl = useRuntimeConfig().public.supabase.url as string;
+//         const edgeFnUrl = `${supabaseUrl}/functions/v1/order-pdf?id=${orderId}`;
+
+//         const res = await fetch(edgeFnUrl, {
+//             headers: {
+//                 Authorization: `Bearer ${session.access_token}`,
+//                 // Edge Function 需要 anon key 做网关鉴权
+//                 apikey: useRuntimeConfig().public.supabase.key as string,
+//             },
+//         });
+
+//         if (!res.ok) {
+//             const err = await res.json().catch(() => ({}));
+//             throw new Error(err.error ?? "PDF 生成失败");
+//         }
+
+//         const blob = await res.blob();
+//         const url = URL.createObjectURL(blob);
+//         const a = document.createElement("a");
+//         a.href = url;
+//         a.download = `order-${orderId}.pdf`;
+//         a.click();
+//         URL.revokeObjectURL(url);
+//     } catch (e: any) {
+//         toast.add({ title: e.message || "下载失败", color: "error" });
+//     } finally {
+//         downloadingPdf.value = false;
+//     }
+// }
+
 
 await orderStore.fetchOrder(orderId);
 const order = computed(() => orderStore.currentOrder);

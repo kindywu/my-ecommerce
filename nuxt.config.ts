@@ -16,6 +16,12 @@ export default defineNuxtConfig({
       exclude: ["/", "/auth/*", "/products", "/products/*"],
     },
   },
+  runtimeConfig: {
+    supabaseServiceKey: process.env.SUPABASE_SECRET_KEY,
+    public: {
+      supabaseUrl: process.env.SUPABASE_URL,
+    },
+  },
   vite: {
     optimizeDeps: {
       include: ["@vue/devtools-core", "@vue/devtools-kit", "@vueuse/core"],
